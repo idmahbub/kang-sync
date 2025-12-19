@@ -35,10 +35,7 @@ jobs:
       # =========================
       - name: Build Windows EXE
         if: runner.os == 'Windows'
-        run: |
-          pyinstaller --onefile --windowed \
-            --name VPS-Rsync-Sync-Windows \
-            app.py
+        run: pyinstaller --onefile --windowed --name VPS-Rsync-Sync-Windows app.py
 
       # =========================
       # macOS Universal (.app)
@@ -52,22 +49,6 @@ jobs:
             app.py
 
       # =========================
-      # Debug (opsional)
+      # Debug
       # =========================
-      - name: List dist folder
-        run: |
-          ls -lah dist
-
-      - name: Check macOS binary arch
-        if: runner.os == 'macOS'
-        run: |
-          file dist/VPS-Rsync-Sync-macOS.app/Contents/MacOS/VPS-Rsync-Sync-macOS || true
-
-      # =========================
-      # Upload to GitHub Release
-      # =========================
-      - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            dist/*
+      - name:
