@@ -1,15 +1,48 @@
-name: Build & Release
+name: Auto Version Build & Release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - master
 
 permissions:
-  contents: write 
+  contents: write
 
 jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # WAJIB untuk baca tag
+
+      - name: Get latest tag
+        id: version
+        run: |
+          git fetch --tags
+          LAST_TAG=$(git tag --sort=-v:refname | head -n 1)
+          if [ -z "$LAST_TAG" ]; then
+            NEW_TAG="v1.0.0"
+          else
+            VERSION=${LAST_TAG#v}
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+            PATCH=$((PATCH+1))
+            NEW_TAG="v$MAJOR.$MINOR.$PATCH"
+          fi
+          echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
+          echo "New tag: $NEW_TAG"
+
+      - name: Create tag
+        run: |
+          git tag ${{ steps.version.outputs.tag }}
+          git push origin ${{ steps.version.outputs.tag }}
+
   build:
+    needs: release
     strategy:
       matrix:
         os: [windows-latest, macos-latest]
@@ -17,79 +50,35 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
-        run: |
-          pip install pyinstaller PySide6
+      - name: Install deps
+        run: pip install pyinstaller PySide6
 
       - name: Install rsync (Windows)
         if: runner.os == 'Windows'
         run: choco install rsync -y
 
-      # =========================
-      # Windows build (.exe)
-      # =========================
-      - name: Build Windows EXE
+      - name: Build Windows
         if: runner.os == 'Windows'
         run: pyinstaller --onefile --windowed --name VPS-Rsync-Sync-Windows app.py
 
-      # =========================
-      # macOS Universal (.app)
-      # =========================
-      - name: Build macOS Universal APP
+      - name: Build macOS
         if: runner.os == 'macOS'
         run: |
           pyinstaller --onefile --windowed \
             --target-architecture universal2 \
-            --name VPS-Rsync-Sync-macOS \
-            app.py
+            --name VPS-Rsync-Sync-macOS app.py
 
-      # =========================
-      # Install create-dmg (macOS)
-      # =========================
-      - name: Install create-dmg
-        if: runner.os == 'macOS'
-        run: |
-          brew install create-dmg
-
-      # =========================
-      # Create DMG (Universal)
-      # =========================
-      - name: Create macOS DMG
-        if: runner.os == 'macOS'
-        run: |
-          mkdir -p dmg
-          create-dmg \
-            --volname "VPS Rsync Sync" \
-            --window-pos 200 120 \
-            --window-size 600 400 \
-            --icon-size 100 \
-            --icon "VPS-Rsync-Sync-macOS.app" 175 120 \
-            --app-drop-link 425 120 \
-            "VPS-Rsync-Sync-macOS.dmg" \
-            dist/VPS-Rsync-Sync-macOS.app
-
-      # =========================
-      # Debug list
-      # =========================
-      - name: List dist (Windows)
-        if: runner.os == 'Windows'
-        run: Get-ChildItem dist
-
-      - name: List dist (macOS)
-        if: runner.os == 'macOS'
-        run: ls -lah dist *.dmg
-
-      # =========================
-      # Upload to GitHub Release
-      # =========================
-      - name: Upload to GitHub Release
+      - name: Upload Release
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          files: |
-            dist/*
-            *.dmg
+          tag_name: ${{ needs.release.outputs.tag }}
+          files: dist/*
