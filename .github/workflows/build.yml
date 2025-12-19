@@ -6,7 +6,7 @@ on:
       - "v*"
 
 permissions:
-  contents: write
+  contents: write 
 
 jobs:
   build:
@@ -22,7 +22,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install deps
+      - name: Install dependencies
         run: |
           pip install pyinstaller PySide6
 
@@ -30,23 +30,44 @@ jobs:
         if: runner.os == 'Windows'
         run: choco install rsync -y
 
-      - name: Build Windows
+      # =========================
+      # Windows build (.exe)
+      # =========================
+      - name: Build Windows EXE
         if: runner.os == 'Windows'
-        run: pyinstaller --onefile --windowed --name VPS-Rsync-Sync app.py
+        run: |
+          pyinstaller --onefile --windowed \
+            --name VPS-Rsync-Sync-Windows \
+            app.py
 
-      - name: Build macOS Universal
+      # =========================
+      # macOS Universal (.app)
+      # =========================
+      - name: Build macOS Universal APP
         if: runner.os == 'macOS'
         run: |
           pyinstaller --onefile --windowed \
             --target-architecture universal2 \
-            --name VPS-Rsync-Sync app.py
+            --name VPS-Rsync-Sync-macOS \
+            app.py
 
-      - name: Verify dist
-        run: ls -lah dist
+      # =========================
+      # Debug (opsional)
+      # =========================
+      - name: List dist folder
+        run: |
+          ls -lah dist
 
-      - name: Create Release & Upload Assets
+      - name: Check macOS binary arch
+        if: runner.os == 'macOS'
+        run: |
+          file dist/VPS-Rsync-Sync-macOS.app/Contents/MacOS/VPS-Rsync-Sync-macOS || true
+
+      # =========================
+      # Upload to GitHub Release
+      # =========================
+      - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
           files: |
-            dist/**
+            dist/*
