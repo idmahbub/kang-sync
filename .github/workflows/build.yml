@@ -2,7 +2,11 @@ name: Build Release
 
 on:
   push:
-    tags: ["v*"]
+    branches:
+      - master
+    tags:
+      - "v*"
+  workflow_dispatch:   # bisa manual trigger
 
 jobs:
   build:
@@ -13,18 +17,22 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - run: pip install pyinstaller PySide6
+      - name: Install deps
+        run: |
+          pip install pyinstaller PySide6
 
       - name: Install rsync (Windows)
         if: runner.os == 'Windows'
-        run: choco install rsync
+        run: choco install rsync -y
 
       - name: Build
-        run: pyinstaller --onefile --windowed app.py
+        run: |
+          pyinstaller --onefile --windowed app.py
 
       - uses: actions/upload-artifact@v4
         with:
