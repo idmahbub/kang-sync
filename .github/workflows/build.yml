@@ -68,14 +68,22 @@ jobs:
         if: runner.os == 'Windows'
         run: pyinstaller --onefile --windowed --name VPS-Rsync-Sync-Windows app.py
 
-      - name: Build macOS
+      - name: Build macOS APP
         if: runner.os == 'macOS'
         run: |
           pyinstaller --windowed \
-          --onedir \
-          --target-architecture universal2 \
-          --name VPS-Rsync-Sync-macOS \
-          app.py
+            --onedir \
+            --target-architecture universal2 \
+            --name KangAi-Sync-macOS \
+            app.py
+
+      - name: Create DMG
+        if: runner.os == 'macOS'
+        run: |
+          brew install create-dmg
+          create-dmg \
+            KangAi-Sync-macOS.dmg \
+            dist/KangAi-Sync-macOS.app
 
       - name: Upload Release
         uses: softprops/action-gh-release@v2
@@ -83,4 +91,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ needs.release.outputs.tag }}
-          files: dist/*
+          files: |
+            dist/*.exe
+            *.dmg
