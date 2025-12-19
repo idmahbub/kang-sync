@@ -51,8 +51,17 @@ jobs:
       # =========================
       # Debug
       # =========================
-      - name: List dist folder
-        run: ls -lah dist
+      # Windows
+      - name: List dist (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Get-ChildItem dist
+
+      # macOS
+      - name: List dist (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          ls -lah dist
 
       # =========================
       # Upload to GitHub Release
