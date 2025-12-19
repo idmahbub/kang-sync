@@ -66,7 +66,7 @@ jobs:
 
       - name: Build Windows
         if: runner.os == 'Windows'
-        run: pyinstaller --onefile --windowed --name VPS-Rsync-Sync-Windows app.py
+        run: pyinstaller --onefile --windowed --name KangAi-Sync-Windows app.py
 
       - name: Build macOS APP
         if: runner.os == 'macOS'
