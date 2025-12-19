@@ -78,11 +78,6 @@ jobs:
       - name: Fix permissions
         if: runner.os == 'macOS'
         run: chmod +x dist/KangAi-Sync-macOS.app/Contents/MacOS/*
-      - name: Test binary
-        if: runner.os == 'macOS'
-        run: |
-          ./dist/KangAi-Sync-macOS.app/Contents/MacOS/KangAi-Sync-macOS || true
-
       - name: Create DMG
         if: runner.os == 'macOS'
         run: |
