@@ -51,4 +51,14 @@ jobs:
       # =========================
       # Debug
       # =========================
-      - name:
+      - name: List dist folder
+        run: ls -lah dist
+
+      # =========================
+      # Upload to GitHub Release
+      # =========================
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*
