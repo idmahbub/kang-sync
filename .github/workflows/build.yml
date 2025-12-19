@@ -76,8 +76,10 @@ jobs:
             --target-architecture universal2 \
             --name KangAi-Sync-macOS app.py
       - name: Fix permissions
+        if: runner.os == 'macOS'
         run: chmod +x dist/KangAi-Sync-macOS.app/Contents/MacOS/*
       - name: Test binary
+        if: runner.os == 'macOS'
         run: |
           ./dist/KangAi-Sync-macOS.app/Contents/MacOS/KangAi-Sync-macOS || true
 
