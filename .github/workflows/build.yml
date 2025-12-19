@@ -71,9 +71,11 @@ jobs:
       - name: Build macOS
         if: runner.os == 'macOS'
         run: |
-          pyinstaller --onefile --windowed \
-            --target-architecture universal2 \
-            --name VPS-Rsync-Sync-macOS app.py
+          pyinstaller --windowed \
+          --onedir \
+          --target-architecture universal2 \
+          --name VPS-Rsync-Sync-macOS \
+          app.py
 
       - name: Upload Release
         uses: softprops/action-gh-release@v2
