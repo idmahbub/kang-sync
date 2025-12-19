@@ -1,4 +1,4 @@
-name: Cross-Platform Build & Release
+name: Build & Release
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - "v*"
 
 permissions:
-  contents: write
+  contents: write 
 
 jobs:
   build:
@@ -24,10 +24,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
           pip install pyinstaller PySide6
 
-      # Install rsync for Windows
       - name: Install rsync (Windows)
         if: runner.os == 'Windows'
         run: choco install rsync -y
@@ -37,21 +35,17 @@ jobs:
       # =========================
       - name: Build Windows EXE
         if: runner.os == 'Windows'
-        run: |
-          pyinstaller --onefile --windowed --name KangaiSync-Windows \
-            --add-data "config_example.json:." \
-            app.py
+        run: pyinstaller --onefile --windowed --name VPS-Rsync-Sync-Windows app.py
 
       # =========================
-      # macOS Universal build (.app)
+      # macOS Universal (.app)
       # =========================
       - name: Build macOS Universal APP
         if: runner.os == 'macOS'
         run: |
           pyinstaller --onefile --windowed \
             --target-architecture universal2 \
-            --name KangaiSync-macOS \
-            --add-data "config_example.json:." \
+            --name VPS-Rsync-Sync-macOS \
             app.py
 
       # =========================
@@ -59,31 +53,32 @@ jobs:
       # =========================
       - name: Install create-dmg
         if: runner.os == 'macOS'
-        run: brew install create-dmg
+        run: |
+          brew install create-dmg
 
       # =========================
-      # Create DMG
+      # Create DMG (Universal)
       # =========================
       - name: Create macOS DMG
         if: runner.os == 'macOS'
         run: |
           mkdir -p dmg
           create-dmg \
-            --volname "KangaiSync" \
+            --volname "VPS Rsync Sync" \
             --window-pos 200 120 \
             --window-size 600 400 \
             --icon-size 100 \
-            --icon "dist/KangaiSync-macOS.app" 175 120 \
+            --icon "VPS-Rsync-Sync-macOS.app" 175 120 \
             --app-drop-link 425 120 \
-            "KangaiSync-macOS.dmg" \
-            dist/KangaiSync-macOS.app
+            "VPS-Rsync-Sync-macOS.dmg" \
+            dist/VPS-Rsync-Sync-macOS.app
 
       # =========================
-      # Debug list files
+      # Debug list
       # =========================
       - name: List dist (Windows)
         if: runner.os == 'Windows'
-        run: dir dist
+        run: Get-ChildItem dist
 
       - name: List dist (macOS)
         if: runner.os == 'macOS'
@@ -92,7 +87,7 @@ jobs:
       # =========================
       # Upload to GitHub Release
       # =========================
-      - name: Upload binaries to Release
+      - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
