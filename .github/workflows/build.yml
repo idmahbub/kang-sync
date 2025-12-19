@@ -1,8 +1,12 @@
-name: Build Release
+name: Build & Release
 
 on:
   push:
-    tags: ["v*"]
+    tags:
+      - "v*"
+
+permissions:
+  contents: write 
 
 jobs:
   build:
@@ -13,20 +17,25 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - run: pip install pyinstaller PySide6
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller PySide6
 
       - name: Install rsync (Windows)
         if: runner.os == 'Windows'
-        run: choco install rsync
+        run: choco install rsync -y
 
-      - name: Build
-        run: pyinstaller --onefile --windowed app.py
+      - name: Build App
+        run: |
+          pyinstaller --onefile --windowed app.py
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: VPS-Rsync-Sync-${{ runner.os }}
-          path: dist/*
+          files: |
+            dist/*
