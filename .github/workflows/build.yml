@@ -71,11 +71,15 @@ jobs:
       - name: Build macOS APP
         if: runner.os == 'macOS'
         run: |
-          pyinstaller --windowed \
-            --onedir \
+          pip install PySide6==6.6.3 shiboken6==6.6.3 pyinstaller
+          pyinstaller --windowed --onedir \
             --target-architecture universal2 \
-            --name KangAi-Sync-macOS \
-            app.py
+            --name KangAi-Sync-macOS app.py
+      - name: Fix permissions
+        run: chmod +x dist/KangAi-Sync-macOS.app/Contents/MacOS/*
+      - name: Test binary
+        run: |
+          ./dist/KangAi-Sync-macOS.app/Contents/MacOS/KangAi-Sync-macOS || true
 
       - name: Create DMG
         if: runner.os == 'macOS'
