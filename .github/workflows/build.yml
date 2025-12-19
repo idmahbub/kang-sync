@@ -29,7 +29,14 @@ jobs:
       - name: Install rsync (Windows)
         if: runner.os == 'Windows'
         run: choco install rsync -y
-
+      - name: Build macOS Universal
+        if: runner.os == 'macOS'
+        run: |
+          pyinstaller \
+            --windowed \
+            --onefile \
+            --target-architecture universal2 \
+            app.py
       - name: Build App
         run: |
           pyinstaller --onefile --windowed app.py
