@@ -1,95 +1,55 @@
-name: Build & Release
+name: Build Release
 
 on:
   push:
     tags:
-      - "v*"
-
-permissions:
-  contents: write 
+      - 'v*'
 
 jobs:
   build:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+        os: [macos-latest, windows-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
-          pip install pyinstaller PySide6
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
 
-      - name: Install rsync (Windows)
-        if: runner.os == 'Windows'
-        run: choco install rsync -y
-
-      # =========================
-      # Windows build (.exe)
-      # =========================
-      - name: Build Windows EXE
-        if: runner.os == 'Windows'
-        run: pyinstaller --onefile --windowed --name VPS-Rsync-Sync-Windows app.py
-
-      # =========================
-      # macOS Universal (.app)
-      # =========================
-      - name: Build macOS Universal APP
-        if: runner.os == 'macOS'
+      - name: Build binary
         run: |
-          pyinstaller --onefile --windowed \
-            --target-architecture universal2 \
-            --name VPS-Rsync-Sync-macOS \
-            app.py
+          mkdir release
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            pyinstaller --onefile --windowed app.py --name KangaiSync.exe
+            cp dist/KangaiSync.exe release/
+          else
+            pyinstaller --onefile --windowed app.py --name KangaiSync
+            mkdir -p release/KangaiSync.app/Contents/MacOS
+            cp dist/KangaiSync release/KangaiSync.app/Contents/MacOS/
+            hdiutil create -volname "KangaiSync" -srcfolder release/KangaiSync.app -ov release/KangaiSync.dmg
+          fi
 
-      # =========================
-      # Install create-dmg (macOS)
-      # =========================
-      - name: Install create-dmg
-        if: runner.os == 'macOS'
-        run: |
-          brew install create-dmg
-
-      # =========================
-      # Create DMG (Universal)
-      # =========================
-      - name: Create macOS DMG
-        if: runner.os == 'macOS'
-        run: |
-          mkdir -p dmg
-          create-dmg \
-            --volname "VPS Rsync Sync" \
-            --window-pos 200 120 \
-            --window-size 600 400 \
-            --icon-size 100 \
-            --icon "VPS-Rsync-Sync-macOS.app" 175 120 \
-            --app-drop-link 425 120 \
-            "VPS-Rsync-Sync-macOS.dmg" \
-            dist/VPS-Rsync-Sync-macOS.app
-
-      # =========================
-      # Debug list
-      # =========================
-      - name: List dist (Windows)
-        if: runner.os == 'Windows'
-        run: Get-ChildItem dist
-
-      - name: List dist (macOS)
-        if: runner.os == 'macOS'
-        run: ls -lah dist *.dmg
-
-      # =========================
-      # Upload to GitHub Release
-      # =========================
-      - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
         with:
-          files: |
-            dist/*
-            *.dmg
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
