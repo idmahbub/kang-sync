@@ -89,6 +89,9 @@ jobs:
       - name: Install NSIS
         if: runner.os == 'Windows'
         run: choco install nsis -y
+      - name: Install NSIS
+        run: |
+          choco install nsis -y
 
       - name: Build Windows Installer
         if: runner.os == 'Windows'
