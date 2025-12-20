@@ -67,12 +67,18 @@ jobs:
       # =========================
       - name: Download rsync (Windows)
         if: runner.os == 'Windows'
+        shell: powershell
         run: |
-          mkdir rsync
-          curl -L -o rsync.zip https://itefix.net/download/free/cwrsync_6.3.0_x64_free.zip
-          tar -xf rsync.zip
-          copy cwrsync*/bin/rsync.exe rsync\
-          copy cwrsync*/bin/cygwin1.dll rsync\
+          New-Item -ItemType Directory -Force -Path rsync
+          Invoke-WebRequest `
+            -Uri https://itefix.net/download/free/cwrsync_6.3.0_x64_free.zip `
+            -OutFile cwrsync.zip
+
+          Expand-Archive cwrsync.zip -DestinationPath cwrsync -Force
+
+          Copy-Item cwrsync\*\bin\rsync.exe rsync\
+          Copy-Item cwrsync\*\bin\cygwin1.dll rsync\
+
 
       - name: Build Windows CLI
         if: runner.os == 'Windows'
