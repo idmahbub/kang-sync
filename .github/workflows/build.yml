@@ -65,20 +65,20 @@ jobs:
       # =========================
       # WINDOWS: BUILD CLI + INSTALLER
       # =========================
-      - name: Install rsync (Windows)
-        if: runner.os == 'Windows'
-        run: choco install rsync -y
-
-      - name: Collect rsync binary
+      - name: Download rsync (Windows)
         if: runner.os == 'Windows'
         shell: powershell
         run: |
           New-Item -ItemType Directory -Force -Path rsync
 
-          Copy-Item "C:\ProgramData\chocolatey\bin\rsync.exe" rsync\
-          Copy-Item "C:\ProgramData\chocolatey\bin\cygwin1.dll" rsync\
+          Invoke-WebRequest `
+            -Uri https://github.com/rn7s2/rsync-win/releases/download/v0.1.3/rsync-win.zip `
+            -OutFile rsync.zip
 
-          Get-ChildItem rsync
+          Expand-Archive rsync.zip -DestinationPath rsync_tmp -Force
+
+          Copy-Item rsync_tmp\rsync-*\rsync.exe rsync\
+          Copy-Item rsync_tmp\rsync-*\cygwin1.dll rsync\
 
 
 
