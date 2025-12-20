@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # WAJIB untuk baca tag
+          fetch-depth: 0
 
       - name: Get latest tag
         id: version
@@ -34,7 +34,6 @@ jobs:
             NEW_TAG="v$MAJOR.$MINOR.$PATCH"
           fi
           echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
-          echo "New tag: $NEW_TAG"
 
       - name: Create tag
         run: |
@@ -57,17 +56,44 @@ jobs:
         with:
           python-version: "3.11"
 
+      # =========================
+      # INSTALL PYTHON DEPS
+      # =========================
       - name: Install deps
         run: pip install pyinstaller PySide6
 
-      - name: Install rsync (Windows)
+      # =========================
+      # WINDOWS: BUILD CLI + INSTALLER
+      # =========================
+      - name: Download rsync (Windows)
         if: runner.os == 'Windows'
-        run: choco install rsync -y
+        run: |
+          mkdir rsync
+          curl -L -o rsync.zip https://itefix.net/download/free/cwrsync_6.3.0_x64_free.zip
+          tar -xf rsync.zip
+          copy cwrsync*/bin/rsync.exe rsync\
+          copy cwrsync*/bin/cygwin1.dll rsync\
 
-      - name: Build Windows
+      - name: Build Windows CLI
         if: runner.os == 'Windows'
-        run: pyinstaller --onefile --windowed --name KangAi-Sync-Windows app.py
+        run: pyinstaller --onefile --windowed --name KangAi-Sync app.py
 
+      - name: Install NSIS
+        if: runner.os == 'Windows'
+        run: choco install nsis -y
+
+      - name: Build Windows Installer
+        if: runner.os == 'Windows'
+        run: |
+          mkdir installer_build
+          copy dist\KangAi-Sync.exe installer_build\
+          xcopy rsync installer_build\rsync /E /I
+          copy installer\installer.nsi installer_build\
+          makensis installer_build\installer.nsi
+
+      # =========================
+      # macOS APP + DMG
+      # =========================
       - name: Build macOS APP
         if: runner.os == 'macOS'
         run: |
@@ -75,9 +101,11 @@ jobs:
           pyinstaller --windowed --onedir \
             --target-architecture universal2 \
             --name KangAi-Sync-macOS app.py
+
       - name: Fix permissions
         if: runner.os == 'macOS'
         run: chmod +x dist/KangAi-Sync-macOS.app/Contents/MacOS/*
+
       - name: Create DMG
         if: runner.os == 'macOS'
         run: |
@@ -86,6 +114,9 @@ jobs:
             KangAi-Sync-macOS.dmg \
             dist/KangAi-Sync-macOS.app
 
+      # =========================
+      # RELEASE
+      # =========================
       - name: Upload Release
         uses: softprops/action-gh-release@v2
         env:
@@ -93,5 +124,5 @@ jobs:
         with:
           tag_name: ${{ needs.release.outputs.tag }}
           files: |
-            dist/*.exe
+            installer_build/*.exe
             *.dmg
