@@ -70,14 +70,16 @@ jobs:
         shell: powershell
         run: |
           New-Item -ItemType Directory -Force -Path rsync
+
           Invoke-WebRequest `
-            -Uri https://itefix.net/download/free/cwrsync_6.3.0_x64_free.zip `
-            -OutFile cwrsync.zip
+            -Uri https://github.com/jonashackt/rsync-for-windows/releases/download/v3.2.7/rsync-3.2.7.zip `
+            -OutFile rsync.zip
 
-          Expand-Archive cwrsync.zip -DestinationPath cwrsync -Force
+          Expand-Archive rsync.zip -DestinationPath rsync_tmp -Force
 
-          Copy-Item cwrsync\*\bin\rsync.exe rsync\
-          Copy-Item cwrsync\*\bin\cygwin1.dll rsync\
+          Copy-Item rsync_tmp\rsync-*\rsync.exe rsync\
+          Copy-Item rsync_tmp\rsync-*\cygwin1.dll rsync\
+
 
 
       - name: Build Windows CLI
