@@ -90,6 +90,7 @@ jobs:
         if: runner.os == 'Windows'
         run: choco install nsis -y
       - name: Install NSIS
+        if: runner.os == 'Windows'
         run: |
           choco install nsis -y
 
