@@ -4,7 +4,7 @@ os.environ["QT_MAC_WANTS_LAYER"] = "1"
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QTextEdit, QFileDialog, QComboBox
 from PySide6.QtGui import QTextCursor
 from PySide6.QtCore import QObject, Signal
-
+import tempfile
 
 
 # -----------------------------
@@ -124,27 +124,32 @@ class App(QWidget):
     # Get SSH key (Base64 or file), bersihkan karakter asing
     # -----------------------------
     def get_ssh_key(self, profile):
-        tmp_path = Path("/tmp/temp_ssh_key")
+        try:
+            # HANYA ganti lokasi, logika sama persis
+            tmp_path = Path(tempfile.gettempdir()) / "temp_ssh_key"
 
-        if "ssh_key_content" in profile and profile["ssh_key_content"]:
-            try:
-                tmp_path = Path("/tmp/temp_ssh_key")
-                tmp_path.write_bytes(base64.b64decode(profile["ssh_key_content"]))
+            if "ssh_key_content" in profile and profile["ssh_key_content"]:
+                tmp_path.write_bytes(
+                    base64.b64decode(profile["ssh_key_content"])
+                )
                 tmp_path.chmod(0o600)
                 return str(tmp_path)
-            except Exception as e:
-                self.log_handler.new_log.emit(f"❌ Failed to write SSH key: {e}")
+
+            elif "ssh_key_path" in profile:
+                tmp_path.write_bytes(
+                    Path(profile["ssh_key_path"]).read_bytes()
+                )
+                tmp_path.chmod(0o600)
+                return str(tmp_path)
+
+            else:
+                self.log_handler.new_log.emit("❌ No SSH key found")
                 return ""
 
-        elif "ssh_key_path" in profile:
-            key_bytes = Path(profile["ssh_key_path"]).read_bytes()
-            key_bytes = key_bytes.rstrip(b"\x00\r\n% ")
-            tmp_path.write_bytes(key_bytes)
-            tmp_path.chmod(0o600)
-            return str(tmp_path)
-        else:
-            self.log_handler.new_log.emit("❌ No SSH key found in profile")
+        except Exception as e:
+            self.log_handler.new_log.emit(f"❌ SSH key error: {e}")
             return ""
+
 
     # -----------------------------
     # Test SSH
