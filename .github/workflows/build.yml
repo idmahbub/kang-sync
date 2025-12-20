@@ -93,6 +93,11 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           choco install nsis -y
+      - name: Add NSIS to PATH
+        if: runner.os == 'Windows'
+        run: |
+          echo "C:\Program Files (x86)\NSIS" >> $env:GITHUB_PATH
+
 
       - name: Build Windows Installer
         if: runner.os == 'Windows'
